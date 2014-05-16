@@ -34,7 +34,7 @@ Lair (https://github.com/fishnetsecurity/Lair) is an application for collaborati
 
   MongoDB: [Java Driver](http://central.maven.org/maven2/org/mongodb/mongo-java-driver/2.12.1/mongo-java-driver-2.12.1.jar)
 
-  Lair Burp Extension: [Latest Release](www.example.com)
+  Lair Burp Extension: [Latest Release](https://github.com/djkottmann/Lair-Burp-Extension/releases)
   
 * If the Lair MongoDB instance utilizes SSL (recommended) then you must perform the following to setup a Java keystore:
 
