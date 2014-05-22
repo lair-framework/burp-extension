@@ -42,11 +42,13 @@ Lair (https://github.com/fishnetsecurity/Lair) is an application for collaborati
 
         `keytool -genkey -alias client -keyalg RSA -keystore client.jks`
 
-  - Generate the server-side SSL certificates per [Mongo instructions](http://docs.mongodb.org/manual/tutorial/configure-ssl/)
+  - If installing Lair from source generate the server-side SSL certificate per [Mongo instructions](http://docs.mongodb.org/manual/tutorial/configure-ssl/)
+
+  - If installing Lair from binary, run start.sh and generate the server-side Mongo certificate. Initial execution will create a file named 'lair.pem'
   
   - Import the server certificate into the client keystore:
 
-        `keytool -import -file server-cert.crt -keystore client.jks -alias mongo`
+        `keytool -import -file /path/to/lair.pem -keystore client.jks -alias mongo`
         
   - Set the appropriate environment variable to force Java to load your keystore when launched:
 
@@ -90,3 +92,8 @@ Lair (https://github.com/fishnetsecurity/Lair) is an application for collaborati
 ![Burp Extension Options](https://github.com/djkottmann/Lair-Burp-Extension/blob/master/images/burp_extension_context_menu.png?raw=true)
 
 * Check the "Alerts" tab for success and failure messages.
+
+## Credits
+
+ - @packetassailant for assistance in initial dev challenges
+ - @zenfosec for testing and QA
