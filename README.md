@@ -52,7 +52,7 @@ Lair (https://github.com/fishnetsecurity/Lair) is an application for collaborati
         
   - Set the appropriate environment variable to force Java to load your keystore when launched:
 
-        `export _JAVA_OPTIONS="-Djavax.net.ssl.trustStore=/path/to/client.jks”`
+        `export _JAVA_OPTIONS="-Djavax.net.ssl.trustStore=/path/to/client.jks"`
         
   - Alternative to setting an environment variable, the trust store can be set when launching Burp from the command line:
   
