@@ -5,29 +5,47 @@
  */
 package burp;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientURI;
-import javax.swing.*;
+import com.google.gson.Gson;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.URL;
 import java.util.*;
-import java.net.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.swing.*;
+import lair.models.Command;
 import lair.models.Constants;
 import lair.models.Host;
-import lair.models.HostRef;
+import lair.models.IdentifiedBy;
+import lair.models.Issue;
+import lair.models.IssueHost;
 import lair.models.PluginId;
-import lair.models.Port;
 import lair.models.Project;
-import lair.models.Vulnerability;
-import org.bson.types.ObjectId;
+import lair.models.Service;
+import lair.models.WebDirectory;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.AuthCache;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.BasicAuthCache;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 
 /**
@@ -36,34 +54,38 @@ import org.jsoup.Jsoup;
  */
 public class BurpExtender implements IBurpExtender, ITab, IContextMenuFactory, ActionListener {
 
+    private final String apiUrl = "/api/projects/";
     private IBurpExtenderCallbacks callbacks;
+    private IExtensionHelpers helpers;
     private JPanel mainPanel = new JPanel();
     private JTextField pidText = new JTextField();
-    private JTextField mongoText = new JTextField();
+    private JTextField lairApiServerText = new JTextField();
     private PrintWriter stdout = null;
     private PrintWriter stderr = null;
     private IScanIssue[] selectedIssues = null;
     private Pattern ipPattern = Pattern.compile("\\d+\\.\\d+\\.\\d+\\.\\d+");
+    private Pattern apiPattern = Pattern.compile("(?<protocol>http|https)://(?<user>.*?):(?<password>.*)@(?<authority>.*$)");
 
     @Override
     public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
         this.callbacks = callbacks;
         callbacks.setExtensionName("Lair");
         callbacks.registerContextMenuFactory(this);
+        
+        helpers = callbacks.getHelpers();
 
         stdout = new PrintWriter(callbacks.getStdout());
         stderr = new PrintWriter(callbacks.getStderr());
 
         JLabel pidLabel = new JLabel();
-        JLabel mongoLabel = new JLabel();
+        JLabel lairApiServerLabel = new JLabel();
 
-        String mongoUrl = System.getenv("MONGO_URL");
-        if (mongoUrl == null || mongoUrl.equalsIgnoreCase("")) {
-            mongoUrl = "";
+        String lairApiServer = System.getenv("LAIR_API_SERVER");
+        if (lairApiServer == null || lairApiServer.equalsIgnoreCase("")) {
+            lairApiServer = "";
         }
-        this.mongoText.setText(mongoUrl);
+        this.lairApiServerText.setText(lairApiServer);
 
-        // TODO: Read MONGO_URL from env and assign to mongoText
         this.mainPanel.setLayout(new GridBagLayout());
         pidLabel.setText("Project ID");
         pidLabel.setOpaque(true);
@@ -83,14 +105,14 @@ public class BurpExtender implements IBurpExtender, ITab, IContextMenuFactory, A
         gridBagConstraints.insets = new Insets(12, 22, 0, 478);
         this.mainPanel.add(this.pidText, gridBagConstraints);
 
-        mongoLabel.setText("Mongo URL");
+        lairApiServerLabel.setText("Lair API Server");
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = GridBagConstraints.NORTHWEST;
         gridBagConstraints.insets = new Insets(24, 15, 0, 0);
-        this.mainPanel.add(mongoLabel, gridBagConstraints);
+        this.mainPanel.add(lairApiServerLabel, gridBagConstraints);
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 2;
@@ -99,12 +121,12 @@ public class BurpExtender implements IBurpExtender, ITab, IContextMenuFactory, A
         gridBagConstraints.ipadx = 225;
         gridBagConstraints.anchor = GridBagConstraints.NORTHWEST;
         gridBagConstraints.insets = new Insets(18, 22, 509, 478);
-        this.mainPanel.add(this.mongoText, gridBagConstraints);
+        this.mainPanel.add(this.lairApiServerText, gridBagConstraints);
 
         callbacks.customizeUiComponent(pidLabel);
-        callbacks.customizeUiComponent(mongoLabel);
+        callbacks.customizeUiComponent(lairApiServerLabel);
         callbacks.customizeUiComponent(this.pidText);
-        callbacks.customizeUiComponent(this.mongoText);
+        callbacks.customizeUiComponent(this.lairApiServerText);
 
         callbacks.addSuiteTab(this);
     }
@@ -135,9 +157,9 @@ public class BurpExtender implements IBurpExtender, ITab, IContextMenuFactory, A
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        String mongoUrl = this.mongoText.getText();
-        if (mongoUrl == null || mongoUrl.equalsIgnoreCase("")) {
-            this.callbacks.issueAlert("Missing required configuration: MONGO_URL");
+        String lairApiServer = this.lairApiServerText.getText();
+        if (lairApiServer == null || lairApiServer.equalsIgnoreCase("")) {
+            this.callbacks.issueAlert("Missing required configuration: LAIR_API_SERVER");
             return;
         }
 
@@ -147,162 +169,184 @@ public class BurpExtender implements IBurpExtender, ITab, IContextMenuFactory, A
             return;
         }
 
-        sendToLair(pid, mongoUrl);
-
+        try {
+            sendToLair(pid, lairApiServer);
+        } catch (IOException ex) {
+            this.callbacks.issueAlert("Error closing HTTP connection");
+            return;
+        } catch (Exception ex) {
+            this.callbacks.issueAlert(ex.getMessage());
+            return;
+        }
     }
 
-    private void sendToLair(String pid, String mongoUrl) {
-        MongoClient m = null;
+    private void sendToLair(String pid, String lairApiServer) throws IOException, Exception {
+        Matcher apiMatcher = this.apiPattern.matcher(lairApiServer);
+        if (!apiMatcher.matches()) {
+            throw new Exception("Error : Invalid format for LAIR_API_SERVER. Expecting 'http://user:password@host:port'.");
+        }
+        String username = apiMatcher.group("user");
+        String password = apiMatcher.group("password");
+        String protocol = apiMatcher.group("protocol");
+        String authority = apiMatcher.group("authority");
+        
+        URL lairURL = new URL(protocol + "://" + authority);
+        String lairHost = lairURL.getHost();
+        int lairPort = lairURL.getPort();
+        
+        RequestConfig cfg = RequestConfig.custom().setSocketTimeout(5000)
+                .setConnectTimeout(5000)
+                .setConnectionRequestTimeout(50000)
+                .build();
+        HttpHost target = new HttpHost(lairHost, lairPort, protocol);
+        CredentialsProvider creds = new BasicCredentialsProvider();
+        creds.setCredentials(
+                new AuthScope(target.getHostName(), target.getPort()),
+                new UsernamePasswordCredentials(username, password)
+        );
+
+        CloseableHttpClient httpClient = HttpClients.custom().setDefaultCredentialsProvider(creds).build();
         try {
-            MongoClientURI uri = new MongoClientURI(mongoUrl);
-            m = connect(uri);
-            DB db = m.getDB(uri.getDatabase());
+            
+            AuthCache authCache = new BasicAuthCache();
+            BasicScheme basicAuth = new BasicScheme();
+            authCache.put(target, basicAuth);
+            HttpClientContext localContext = HttpClientContext.create();
+            localContext.setAuthCache(authCache);
+            HttpPatch req = new HttpPatch(protocol + "://" + lairHost + ":" + lairPort + this.apiUrl + pid);
 
-            // Retrieve project, ensure it exists
-            DBCollection projects = db.getCollection("projects");
-            projects.setObjectClass(Project.class);
-            BasicDBObject doc = new BasicDBObject("_id", pid);
-            Project project = (Project) projects.findOne(doc);
-            if (project == null) {
-                throw new Exception("Project does not exist in Lair");
-            }
+            req.setConfig(cfg);
+            Gson gson = new Gson();
 
-            // Retrieve host, ensure it exists
-            DBCollection hosts = db.getCollection("hosts");
-            hosts.setObjectClass(Host.class);
+            Project project = new Project();
+            project.setId(pid);
+            Command cmd = new Command();
+            cmd.setCommand("Manual issue import");
+            cmd.setTool(Constants.TOOL);
+            project.getCommands().add(cmd);
+            project.setTool(Constants.TOOL);
+            HashMap<String, Host> hostMap = new HashMap<String, Host>();
+            HashMap<String, Issue> issueMap = new HashMap<String, Issue>();
             for (IScanIssue issue : this.selectedIssues) {
                 String h = issue.getHttpService().getHost();
                 InetAddress addr = InetAddress.getByName(issue.getHttpService().getHost());
                 Matcher ipMatcher = this.ipPattern.matcher(h);
-                boolean ipLookup = false;
-                if (ipMatcher.matches()) {
-                    // Scan result is by IP, do lookup by IP in Lair
-                    doc = new BasicDBObject("project_id", pid).append("string_addr", h);
-                    ipLookup = true;
+                if (!ipMatcher.matches()) {
+                    throw new Exception("Error : Cannot insert by hostname. Need an IP address.");
+                }
+
+                Host host;
+                if (hostMap.containsKey(h)) {
+                    host = hostMap.get(h);
                 } else {
-                    // Scan result is by FQDN, do lookup by hostname in Lair
-                    doc = new BasicDBObject("project_id", pid).append("hostnames", h);
+                    host = new Host();
+                    host.setIpv4(h);
+                    host.setProjectId(pid);
+                    hostMap.put(h, host);
+                }
+                                    
+
+                
+                Service service = new Service();
+                service.setProjectId(pid);
+                service.setPort(issue.getHttpService().getPort());
+                host.getServices().add(service);
+                for(IHttpRequestResponse reqRes : issue.getHttpMessages()) {
+                    IRequestInfo reqInfo = this.helpers.analyzeRequest(reqRes);
+                    IResponseInfo resInfo = this.helpers.analyzeResponse(reqRes.getResponse());
+                    
+                    WebDirectory wd = new WebDirectory();
+                    wd.setProjectId(pid);
+                    wd.setPath(reqInfo.getUrl().getPath());
+                    wd.setPort(service.getPort());
+                    wd.setResponseCode(Short.toString(resInfo.getStatusCode()));
+                    host.getWebDirectories().add(wd);
                 }
 
-                DBCursor cursor = hosts.find(doc);
-                if (ipLookup && (cursor == null || cursor.count() != 1)) {
-                    // Expect 1 and only 1 host result if lookup by IP
-                    throw new Exception("Error retrieving host by IP. Does " + h + " exist in your Lair project?");
-                }
-
-                if (!ipLookup && (cursor == null || cursor.count() == 0)) {
-                    // Expect 1 or more hosts if lookup by hostname
-                    throw new Exception("Error retrieving host by name. Does " + h + " exist in your Lair project?");
-                }
-
-                // Retrieve port for each host, insert it if it doesn't exist
-                DBCollection ports = db.getCollection("ports");
-                ports.setObjectClass(Port.class);
-                Port port = null;
-                while (cursor.hasNext()) {
-                    Host host = (Host) cursor.next();
-                    int p = issue.getHttpService().getPort();
-                    doc = new BasicDBObject("project_id", pid).append("host_id", host.getId()).append("port", p);
-                    port = (Port) ports.findOne(doc);
-                    if (port == null) {
-                        // Port doesn't exist for host, add it
-                        port = new Port();
-                        port.setAlive(true);
-                        port.setHostId(host.getId());
-                        port.setId(new ObjectId().toString());
-                        port.setPort(p);
-                        port.setProjectId(pid);
-                        ports.insert(port);
-                        this.callbacks.issueAlert("Added new port for host " + host.getStringAddr());
-                    }
-
-                    // Retrieve vulnerability, adding it if it doesn't exist
-                    DBCollection vulns = db.getCollection("vulnerabilities");
-                    vulns.setObjectClass(Vulnerability.class);
-                    Vulnerability vuln = null;
-                    BasicDBObject pluginDoc = new BasicDBObject("tool", Constants.TOOL).append("id", String.valueOf(issue.getIssueType()));
-                    doc = new BasicDBObject("project_id", pid).append("plugin_ids", pluginDoc);
-                    vuln = (Vulnerability) vulns.findOne(doc);
-                    if (vuln == null) {
-                        // Vulnerability doesn't exist, add it
-                        vuln = new Vulnerability();
-                        vuln.setId(new ObjectId().toString());
-                        vuln.setProjectId(pid);
-                        vuln.setTitle(issue.getIssueName());
-                        vuln.setDescription(issue.getIssueBackground() != null ? Jsoup.parse(issue.getIssueBackground()).text() : "");
-                        vuln.setSolution(issue.getRemediationBackground() != null ? Jsoup.parse(issue.getRemediationBackground()).text() : "");
-                        String sev = issue.getSeverity();
-                        if (sev.equals("High")) {
+                Issue vuln;
+                if (issueMap.containsKey(issue.getIssueName())) {
+                    vuln = issueMap.get(issue.getIssueName());
+                } else {
+                    vuln = new Issue();
+                    vuln.setProjectId(pid);
+                    vuln.setTitle(issue.getIssueName());
+                    vuln.setDescription(issue.getRemediationBackground() != null ? Jsoup.parse(issue.getIssueBackground()).text() : "");
+                    vuln.setSolution(issue.getRemediationBackground() != null ? Jsoup.parse(issue.getRemediationBackground()).text() : "");
+                    String sev = issue.getSeverity();
+                    switch (sev) {
+                        case "High":
                             vuln.setCvss(10.0);
-                        } else if (sev.equals("Medium")) {
+                            vuln.setRating(Constants.RATING_HIGH);
+                            break;
+                        case "Medium":
                             vuln.setCvss(5.0);
-                        } else if (sev.equals("Low")) {
+                            vuln.setRating(Constants.RATING_MEDIUM);
+                            break;
+                        case "Low":
                             vuln.setCvss(3.0);
-                        } else {
+                            vuln.setRating(Constants.RATING_LOW);
+                            break;
+                        default:
                             vuln.setCvss(0.0);
-                        }
-                        PluginId pluginId = new PluginId();
-                        pluginId.setId(Integer.toString(issue.getIssueType()));
-                        pluginId.setTool(Constants.TOOL);
-                        ArrayList<PluginId> pluginIds = new ArrayList<PluginId>();
-                        pluginIds.add(pluginId);
-                        vuln.setPluginIds(pluginIds);
-                        vuln.setIdentifiedBy(pluginIds);
-                        HostRef hostRef = new HostRef();
-                        hostRef.setPort(issue.getHttpService().getPort());
-                        hostRef.setStringAddr(host.getStringAddr());
-                        ArrayList<HostRef> hostList = new ArrayList<HostRef>();
-                        hostList.add(hostRef);
-                        vuln.setHosts(hostList);
-                        vuln.setLastModifiedBy(Constants.TOOL);
-                        String evidence = (issue.getIssueDetail() != null ? Jsoup.parse(issue.getIssueDetail()).text() : "None");
-                        vuln.setEvidence("\n" + host.getStringAddr() + ":\n" + evidence);
-                        vulns.insert(vuln);
-                        this.callbacks.issueAlert("Added new vulnerability");
-                    } else {
-                        // Vuln exists in database, is host/port already tied to it?
-                        boolean isPresent = false;
-                        for (HostRef hostRef : vuln.getHosts()) {
-                            if (hostRef.getStringAddr().equals(host.getStringAddr())
-                                    && hostRef.getPort() == issue.getHttpService().getPort()) {
-                                isPresent = true;
-                            }
-                        }
+                            vuln.setRating(Constants.RATING_LOW);
+                            break;
+                    }
+                    PluginId pluginId = new PluginId();
+                    pluginId.setId(Integer.toString(issue.getIssueType()));
+                    pluginId.setTool(Constants.TOOL);
+                    vuln.getPluginIds().add(pluginId);
 
-                        if (!isPresent) {
-                            // Host/port isn't tied to vuln, add host and save
-                            HostRef hostRef = new HostRef();
-                            hostRef.setPort(issue.getHttpService().getPort());
-                            hostRef.setStringAddr(host.getStringAddr());
-                            ArrayList<HostRef> hostList = vuln.getHosts();
-                            hostList.add(hostRef);
-                            vuln.setHosts(hostList);
-                            String evidence = (issue.getIssueDetail() != null ? Jsoup.parse(issue.getIssueDetail()).text() : "None");
-                            vuln.setEvidence(vuln.getEvidence() + "\n\n" + host.getStringAddr() + ":\n" + evidence);
-                            vulns.save(vuln);
-                            this.callbacks.issueAlert("Added host to existing vulnerability");
-                        } else {
-                            // Doing nothing, host already exists for that vuln
-                            this.callbacks.issueAlert("Doing nothing. Host/port already exists for that vulnerability");
-                        }
+                    IdentifiedBy idBy = new IdentifiedBy();
+                    idBy.setTool(Constants.TOOL);
+                    vuln.getIdentifiedBy().add(idBy);
+
+                    issueMap.put(vuln.getTitle(), vuln);
+                }
+
+                IssueHost issueRef = new IssueHost();
+                issueRef.setPort(issue.getHttpService().getPort());
+                issueRef.setIpv4(host.getIpv4());
+                issueRef.setProtocol(Constants.PROTOCOL_TCP);
+                vuln.getHosts().add(issueRef);
+
+                vuln.setLastModidifiedBy(Constants.TOOL);
+                String evidence = (issue.getIssueDetail() != null ? Jsoup.parse(issue.getIssueDetail()).text() : "None");
+                vuln.setEvidence("\n" + host.getIpv4() + ":\n" + evidence);
+            }
+            
+            for(Issue issue : issueMap.values()) {
+                project.getIssues().add(issue);
+            }
+            
+            for(Host host : hostMap.values()) {
+                project.getHosts().add(host);
+            }
+            
+            String json = gson.toJson(project);
+
+            StringEntity input = new StringEntity(json);
+            input.setContentType("application/json");
+            req.setEntity(input);
+
+            ResponseHandler<String> resHandler = new ResponseHandler<String>() {
+                @Override
+                public String handleResponse(HttpResponse res) throws ClientProtocolException, IOException {
+                    int status = res.getStatusLine().getStatusCode();
+                    if (status >= 200 && status < 300) {
+                        HttpEntity entity = res.getEntity();
+                        return entity != null ? EntityUtils.toString(entity) : null;
+                    } else {
+                        throw new ClientProtocolException("Unexpected response: " + status);
                     }
                 }
-            }
+            };
 
-        } catch (UnknownHostException e) {
-            this.callbacks.issueAlert("Unable to connect to Mongo host URL/Port");
+            String body = httpClient.execute(req, resHandler, localContext);
+
         } catch (Exception e) {
             this.callbacks.issueAlert(e.getMessage());
         } finally {
-            if (m != null) {
-                m.close();
-            }
+            httpClient.close();
         }
     }
-
-    private MongoClient connect(MongoClientURI mongoUrl) throws UnknownHostException {
-        this.callbacks.issueAlert("Using truststore: " + System.getProperty("javax.net.ssl.trustStore"));
-        return new MongoClient(mongoUrl);
-    }
-
 }

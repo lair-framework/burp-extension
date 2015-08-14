@@ -6,47 +6,44 @@
 
 package lair.models;
 
-import com.mongodb.BasicDBObject;
-
 /**
  *
  * @author dkottmann
  */
-public class File extends BasicDBObject {
-
+public class File {
+    private String fileName;
+    private String url;
+    
     public File() {
-        super();
-    }
-    
-    public File(BasicDBObject base) {
-        super(base);
-    }
-    
-    /**
-     * @return the name
-     */
-    public String getName() {
-        return this.getString("name");
+        this.fileName = "";
+        this.url = "";
     }
 
     /**
-     * @param name the name to set
+     * @return the fileName
      */
-    public void setName(String name) {
-        this.put("name", name);
+    public String getFileName() {
+        return fileName;
+    }
+
+    /**
+     * @param fileName the fileName to set
+     */
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 
     /**
      * @return the url
      */
     public String getUrl() {
-        return this.getString("url");
+        return url;
     }
 
     /**
      * @param url the url to set
      */
     public void setUrl(String url) {
-        this.put("url", url);
+        this.url = url;
     }
 }

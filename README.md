@@ -28,43 +28,32 @@ Lair (https://github.com/fishnetsecurity/Lair) is an application for collaborati
 
 * Download dependencies
 
-  Lair: [GitHub Project](https://github.com/fishnetsecurity/Lair)
+  Lair [version 2.0]: [GitHub Project](https://github.com/lair-framework)
 
   Burp: [Portswigger.net](http://portswigger.net/burp/download.HTML)
 
-  MongoDB: [Java Driver](http://central.maven.org/maven2/org/mongodb/mongo-java-driver/2.12.1/mongo-java-driver-2.12.1.jar)
-
   Lair Burp Extension: [Latest Release](https://github.com/djkottmann/Lair-Burp-Extension/releases)
   
-* If the Lair MongoDB instance utilizes SSL (recommended) then you must perform the following to setup a Java keystore:
+* Download dependencies (use the download_deps.sh script for simplicity)
 
-  - Create a client keystore if you haven’t already:
+~~~~bash
+$ download_deps.sh
+[!] Directory does not exist
+Usage: ./download_deps.sh DESTINATION_DIRECTORY
 
-        `keytool -genkey -alias client -keyalg RSA -keystore client.jks`
+$ ./download_deps.sh /tmp/lair_burp
 
-  - If installing Lair from source generate the server-side SSL certificate per [Mongo instructions](http://docs.mongodb.org/manual/tutorial/configure-ssl/)
+<output snipped>
 
-  - If installing Lair from binary, run start.sh and generate the server-side Mongo certificate. Initial execution will create a file named 'lair.pem'
-  
-  - Import the server certificate into the client keystore:
-
-        `keytool -import -file /path/to/lair.pem -keystore client.jks -alias mongo`
-        
-  - Set the appropriate environment variable to force Java to load your keystore when launched:
-
-        `export _JAVA_OPTIONS="-Djavax.net.ssl.trustStore=/path/to/client.jks"`
-        
-  - Alternative to setting an environment variable, the trust store can be set when launching Burp from the command line:
-  
-        `java -Djavax.net.ssl.trustStore=/path/to/client.jks -jar burpsuite_pro_vX.Y.jar`
-
-  - **Depending on how you launch Burp you may need to tweak your environment to automatically set this parameter**
+[+] Complete. Add /tmp/lair_burp/lib to your Java CLASSPATH or Burp Extender options
+~~~~
 
 * Launch Burp
 
 * Go to: Extender > Options
 
-* Under "Java Environment" click "Select folder ..." and select the folder that contains your Java MongoDB driver and click "Open".
+* Under "Java Environment" click "Select folder ..." and select the folder that contains the dependencies (see ```download_deps.sh``` 
+above, your path should match the output from that script).
 ![Burp Extension Options](https://github.com/djkottmann/Lair-Burp-Extension/blob/master/images/burp_extension_options.png?raw=true)
 
 * Go to: Extender > Extensions
@@ -73,7 +62,7 @@ Lair (https://github.com/fishnetsecurity/Lair) is an application for collaborati
 
 * For "Extension type" select Java.
 
-* For "Extension file" select the Lair_Burp_Extension.jar file.
+* For "Extension file" select the Lair_Burp_Extension-<version>.jar file.
 ![Extension Load](https://github.com/djkottmann/Lair-Burp-Extension/blob/master/images/burp_extension_load.png?raw=true)
 
 * Click "Next" and ensure no errors were generated.
@@ -83,15 +72,18 @@ Lair (https://github.com/fishnetsecurity/Lair) is an application for collaborati
  
 ## Detailed Usage
 
-* After loading the extension, navigate to the Lair Configuration tab and setup your Lair project ID and Mongo URL. **Depending on how you launched Burp the Mongo URL may be populated from your environment variables**
+* After loading the extension, navigate to the Lair Configuration tab and setup your Lair project ID and Lair API Server. **Depending on how you launched Burp the API Server may be populated from your environment variables**
 ![Burp Extension Options](https://github.com/djkottmann/Lair-Burp-Extension/blob/master/images/burp_extension_lair_config.png?raw=true)
 
 * Perform passive and active scanning
 
-* Go To: Scanner > Results. Right-click a scan issue you wish to export and click "Send to Lair"
-![Burp Extension Options](https://github.com/djkottmann/Lair-Burp-Extension/blob/master/images/burp_extension_context_menu.png?raw=true)
+* Find a scan issue you wish to export. Right-click and select "Send to Lair"
+![Context Menu](https://github.com/djkottmann/Lair-Burp-Extension/blob/master/images/burp_extension_context_menu.png?raw=true)
 
-* Check the "Alerts" tab for success and failure messages.
+* Check the "Alerts" tab for error messages.
+
+* Check your Lair project, your finding should be imported
+![Lair Data](https://github.com/djkottmann/Lair-Burp-Extension/blob/master/images/burp_extension_success.png?raw=true)
 
 ## Credits
 

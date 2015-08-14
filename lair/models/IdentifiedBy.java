@@ -12,14 +12,11 @@ import java.util.Objects;
  *
  * @author dkottmann
  */
-public class PluginId {
-
+public class IdentifiedBy {
     private String tool;
-    private String id;
     
-    public PluginId() {
-        this.tool = Constants.TOOL;
-        this.id = "";
+    public IdentifiedBy() {
+        this.tool = "";
     }
 
     /**
@@ -36,25 +33,10 @@ public class PluginId {
         this.tool = tool;
     }
 
-    /**
-     * @return the id
-     */
-    public String getId() {
-        return id;
-    }
-
-    /**
-     * @param id the id to set
-     */
-    public void setId(String id) {
-        this.id = id;
-    }
-
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 67 * hash + Objects.hashCode(this.tool);
-        hash = 67 * hash + Objects.hashCode(this.id);
+        hash = 59 * hash + Objects.hashCode(this.tool);
         return hash;
     }
 
@@ -66,11 +48,8 @@ public class PluginId {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final PluginId other = (PluginId) obj;
+        final IdentifiedBy other = (IdentifiedBy) obj;
         if (!Objects.equals(this.tool, other.tool)) {
-            return false;
-        }
-        if (!Objects.equals(this.id, other.id)) {
             return false;
         }
         return true;
