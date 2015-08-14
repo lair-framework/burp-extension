@@ -6,19 +6,19 @@ The Lair Burp Extension is exactly what it sounds like - a Burp Suite Extension 
 Lair (https://github.com/fishnetsecurity/Lair) is an application for collaborative management of diverse information associated with pentests. Although a Burp Drone already exists to consume Burp XML files (https://github.com/fishnetsecurity/Lair-Drones), being able to perform on-demand imports of individual issues directly from Burp makes tracking the issues a little more manageable.
 
 ## Features
-* Integrates with an existing Lair MongoDB instance over plaintext or SSL
+* Integrates with an existing Lair API Server instance
 * Straightforward configuration and usage
 * Burp scan results context menu allows one-click export of a Burp issue to a Lair project
 * Creates new ports and vulnerabilities in Lair project if not currently present during import
 
 ## Limitations
 * Cannot resolve DNS names via Burp-specific configuration (e.g. SOCKS proxy, host list)
-* Setup to use SSL with MongoDB requires a few additional steps
-* Project and host must exist in Lair project - they will not be created dynamically by the extension
+* Currently only allows import of issues by IP address (see above point)
+* Project must exist in Lair project - it will not be created dynamically by the extension
 
 ## Usage
 * Enable the extension in Burp
-* Go to the "Lair Configuration" tab and enter the project id and the Mongo URL
+* Go to the "Lair Configuration" tab and enter the project id and the API Server URL
 * Perform passive/active scans in Burp
 * Go to: Scanner > Results
 * Right-click the desired scan issue and click "Send to Lair"
@@ -54,7 +54,7 @@ $ ./download_deps.sh /tmp/lair_burp
 
 * Under "Java Environment" click "Select folder ..." and select the folder that contains the dependencies (see ```download_deps.sh``` 
 above, your path should match the output from that script).
-![Burp Extension Options](https://github.com/djkottmann/Lair-Burp-Extension/blob/master/images/burp_extension_options.png?raw=true)
+![Burp Extension Options](https://github.com/djkottmann/Lair-Burp-Extension/blob/2.0/images/burp_extension_options.png?raw=true)
 
 * Go to: Extender > Extensions
 
@@ -63,27 +63,27 @@ above, your path should match the output from that script).
 * For "Extension type" select Java.
 
 * For "Extension file" select the Lair_Burp_Extension-<version>.jar file.
-![Extension Load](https://github.com/djkottmann/Lair-Burp-Extension/blob/master/images/burp_extension_load.png?raw=true)
+![Extension Load](https://github.com/djkottmann/Lair-Burp-Extension/blob/2.0/images/burp_extension_load.png?raw=true)
 
 * Click "Next" and ensure no errors were generated.
-![Successful Load](https://github.com/djkottmann/Lair-Burp-Extension/blob/master/images/burp_extension_load_success.png?raw=true)
+![Successful Load](https://github.com/djkottmann/Lair-Burp-Extension/blob/2.0/images/burp_extension_load_success.png?raw=true)
 
 * You should see a new Burp Suite tab titled "Lair Configuration"
  
 ## Detailed Usage
 
 * After loading the extension, navigate to the Lair Configuration tab and setup your Lair project ID and Lair API Server. **Depending on how you launched Burp the API Server may be populated from your environment variables**
-![Burp Extension Options](https://github.com/djkottmann/Lair-Burp-Extension/blob/master/images/burp_extension_lair_config.png?raw=true)
+![Burp Extension Options](https://github.com/djkottmann/Lair-Burp-Extension/blob/2.0/images/burp_extension_lair_config.png?raw=true)
 
 * Perform passive and active scanning
 
 * Find a scan issue you wish to export. Right-click and select "Send to Lair"
-![Context Menu](https://github.com/djkottmann/Lair-Burp-Extension/blob/master/images/burp_extension_context_menu.png?raw=true)
+![Context Menu](https://github.com/djkottmann/Lair-Burp-Extension/blob/2.0/images/burp_extension_context_menu.png?raw=true)
 
 * Check the "Alerts" tab for error messages.
 
 * Check your Lair project, your finding should be imported
-![Lair Data](https://github.com/djkottmann/Lair-Burp-Extension/blob/master/images/burp_extension_success.png?raw=true)
+![Lair Data](https://github.com/djkottmann/Lair-Burp-Extension/blob/2.0/images/burp_extension_success.png?raw=true)
 
 ## Credits
 
