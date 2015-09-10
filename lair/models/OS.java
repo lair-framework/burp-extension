@@ -6,63 +6,61 @@
 
 package lair.models;
 
-import com.mongodb.BasicDBObject;
-
 /**
  *
  * @author dkottmann
  */
-public class OS extends BasicDBObject {
+public class OS {
 
-    public OS() {
-        super();
-        this.setWeight(0);
-        this.setFingerprint("unknown");
-    }
+    private String tool;
+    private Integer weight;
+    private String fingerprint;
     
-    public OS(BasicDBObject base) {
-        super(base);
+    public OS() {
+        this.tool = Constants.TOOL;
+        this.weight = 0;
+        this.fingerprint = Constants.PRODUCT_UNKNOWN;
     }
 
     /**
      * @return the tool
      */
     public String getTool() {
-        return this.getString("tool");
+        return tool;
     }
 
     /**
      * @param tool the tool to set
      */
     public void setTool(String tool) {
-        this.put("tool", tool);
+        this.tool = tool;
     }
 
     /**
      * @return the weight
      */
-    public int getWeight() {
-        return this.getInt("weight");
+    public Integer getWeight() {
+        return weight;
     }
 
     /**
      * @param weight the weight to set
      */
-    public void setWeight(int weight) {
-        this.put("weight", weight);
+    public void setWeight(Integer weight) {
+        this.weight = weight;
     }
 
     /**
      * @return the fingerprint
      */
     public String getFingerprint() {
-        return this.getString("fingerprint");
+        return fingerprint;
     }
 
     /**
      * @param fingerprint the fingerprint to set
      */
     public void setFingerprint(String fingerprint) {
-        this.put("fingerprint", fingerprint);
+        this.fingerprint = fingerprint;
     }
 }

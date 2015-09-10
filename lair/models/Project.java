@@ -5,117 +5,288 @@
  */
 package lair.models;
 
-import com.mongodb.BasicDBObject;
+import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 /**
  *
  * @author dkottmann
  */
-public class Project extends BasicDBObject {
-
+public class Project {
+    @SerializedName("_id") private String id;
+    private String name;
+    private String industry;
+    private String createdAt;
+    private String description;
+    private String owner;
+    private HashSet<String> contributors;
+    private ArrayList<Command> commands;
+    private ArrayList<Note> notes;
+    private ArrayList<String> droneLog;
+    private String tool;
+    private HashSet<Host> hosts;
+    private HashSet<Issue> issues;
+    private ArrayList<AuthInterface> authInterfaces;
+    private ArrayList<Netblock> netblocks;
+    private ArrayList<Person> people;
+    private ArrayList<Credential> credentials;
+    
     public Project() {
-        super();
+        this.id = "";
+        this.name = "";
+        this.industry = "";
+        this.createdAt = "";
+        this.description = "";
+        this.owner = "";
+        this.contributors = new HashSet<String>();
+        this.commands = new ArrayList<Command>();
+        this.notes = new ArrayList<Note>();
+        this.droneLog = new ArrayList<String>();
+        this.tool = Constants.TOOL;
+        this.hosts = new HashSet<Host>();
+        this.issues = new HashSet<Issue>();
+        this.authInterfaces = new ArrayList<AuthInterface>();
+        this.netblocks = new ArrayList<Netblock>();
+        this.people = new ArrayList<Person>();
+        this.credentials = new ArrayList<Credential>();
     }
 
-    public Project(BasicDBObject base) {
-        super(base);
+    /**
+     * @return the id
+     */
+    public String getId() {
+        return id;
     }
 
-    public String getProjectName() {
-        return this.getString("project_name");
+    /**
+     * @param id the id to set
+     */
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setProjectName(String projectName) {
-        this.put("project_name", projectName);
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
     }
 
+    /**
+     * @param name the name to set
+     */
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    /**
+     * @return the industry
+     */
     public String getIndustry() {
-        return this.getString("industry");
+        return industry;
     }
 
+    /**
+     * @param industry the industry to set
+     */
     public void setIndustry(String industry) {
-        this.put("industry", industry);
+        this.industry = industry;
     }
 
-    public String getCreationDate() {
-        return this.getString("creation_date");
+    /**
+     * @return the createdAt
+     */
+    public String getCreatedAt() {
+        return createdAt;
     }
 
+    /**
+     * @param createdAt the createdAt to set
+     */
+    public void setCreatedAt(String createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    /**
+     * @return the description
+     */
     public String getDescription() {
-        return this.getString("description");
+        return description;
     }
 
+    /**
+     * @param description the description to set
+     */
     public void setDescription(String description) {
-        this.put("description", description);
+        this.description = description;
     }
 
+    /**
+     * @return the owner
+     */
     public String getOwner() {
-        return this.getString("owner");
+        return owner;
     }
 
+    /**
+     * @param owner the owner to set
+     */
     public void setOwner(String owner) {
-        this.put("owner", owner);
+        this.owner = owner;
     }
 
-    public ArrayList<String> getContributors() {
-        return (ArrayList<String>) this.get("contributors");
+    /**
+     * @return the contributors
+     */
+    public HashSet<String> getContributors() {
+        return contributors;
     }
 
-    public void setContributors(ArrayList<String> contributors) {
-        this.put("contributors", contributors);
+    /**
+     * @param contributors the contributors to set
+     */
+    public void setContributors(HashSet<String> contributors) {
+        this.contributors = contributors;
     }
 
-    public ArrayList<String> getCommands() {
-        return (ArrayList<String>) this.get("commands");
+    /**
+     * @return the commands
+     */
+    public ArrayList<Command> getCommands() {
+        return commands;
     }
 
-    public void setCommands(ArrayList<String> commands) {
-        this.put("commands", commands);
+    /**
+     * @param commands the commands to set
+     */
+    public void setCommands(ArrayList<Command> commands) {
+        this.commands = commands;
     }
 
+    /**
+     * @return the notes
+     */
     public ArrayList<Note> getNotes() {
-        ArrayList<Note> ret = new ArrayList<Note>();
-        for (BasicDBObject obj : (ArrayList<BasicDBObject>) this.get("notes")) {
-            ret.add(new Note(obj));
-        }
-        return ret;
+        return notes;
     }
 
+    /**
+     * @param notes the notes to set
+     */
     public void setNotes(ArrayList<Note> notes) {
-        this.put("notes", notes);
+        this.notes = notes;
     }
 
+    /**
+     * @return the droneLog
+     */
     public ArrayList<String> getDroneLog() {
-        return (ArrayList<String>) this.get("drone_log");
+        return droneLog;
     }
 
+    /**
+     * @param droneLog the droneLog to set
+     */
     public void setDroneLog(ArrayList<String> droneLog) {
-        this.put("drone_log", droneLog);
+        this.droneLog = droneLog;
     }
 
-    public ArrayList<Message> getMessages() {
-        ArrayList<Message> ret = new ArrayList<Message>();
-        for (BasicDBObject obj : (ArrayList<BasicDBObject>) this.get("messages")) {
-            ret.add(new Message(obj));
-        }
-        return ret;
+    /**
+     * @return the tool
+     */
+    public String getTool() {
+        return tool;
     }
 
-    public void setMessages(ArrayList<Message> messages) {
-        this.put("messages", messages);
+    /**
+     * @param tool the tool to set
+     */
+    public void setTool(String tool) {
+        this.tool = tool;
     }
 
-    public ArrayList<File> getFiles() {
-        ArrayList<File> ret = new ArrayList<File>();
-        for (BasicDBObject obj : (ArrayList<BasicDBObject>) this.get("files")) {
-            ret.add(new File(obj));
-        }
-        return ret;
+    /**
+     * @return the hosts
+     */
+    public HashSet<Host> getHosts() {
+        return hosts;
     }
 
-    public void setFiles(ArrayList<File> files) {
-        this.put("files", files);
+    /**
+     * @param hosts the hosts to set
+     */
+    public void setHosts(HashSet<Host> hosts) {
+        this.hosts = hosts;
     }
 
+    /**
+     * @return the issues
+     */
+    public HashSet<Issue> getIssues() {
+        return issues;
+    }
+
+    /**
+     * @param issues the issues to set
+     */
+    public void setIssues(HashSet<Issue> issues) {
+        this.issues = issues;
+    }
+
+    /**
+     * @return the authInterfaces
+     */
+    public ArrayList<AuthInterface> getAuthInterfaces() {
+        return authInterfaces;
+    }
+
+    /**
+     * @param authInterfaces the authInterfaces to set
+     */
+    public void setAuthInterfaces(ArrayList<AuthInterface> authInterfaces) {
+        this.authInterfaces = authInterfaces;
+    }
+
+    /**
+     * @return the netblocks
+     */
+    public ArrayList<Netblock> getNetblocks() {
+        return netblocks;
+    }
+
+    /**
+     * @param netblocks the netblocks to set
+     */
+    public void setNetblocks(ArrayList<Netblock> netblocks) {
+        this.netblocks = netblocks;
+    }
+
+    /**
+     * @return the people
+     */
+    public ArrayList<Person> getPeople() {
+        return people;
+    }
+
+    /**
+     * @param people the people to set
+     */
+    public void setPeople(ArrayList<Person> people) {
+        this.people = people;
+    }
+
+    /**
+     * @return the credentials
+     */
+    public ArrayList<Credential> getCredentials() {
+        return credentials;
+    }
+
+    /**
+     * @param credentials the credentials to set
+     */
+    public void setCredentials(ArrayList<Credential> credentials) {
+        this.credentials = credentials;
+    }
 }

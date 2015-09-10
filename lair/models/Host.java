@@ -6,127 +6,295 @@
 
 package lair.models;
 
-import com.mongodb.BasicDBObject;
+import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Objects;
 
 /**
  *
  * @author dkottmann
  */
-public class Host extends BasicDBObject {
+public class Host {
+    @SerializedName("_id") private String id;
+    private String projectId;
+    private Long longIpv4Addr;
+    private String ipv4;
+    private String mac;
+    private HashSet<String> hostnames;
+    private OS os;
+    private ArrayList<Note> notes;
+    private String statusMessage;
+    private HashSet<String> tags;
+    private String status;
+    private String lastModifiedBy;
+    private Boolean isFlagged;
+    private ArrayList<File> files;
+    private ArrayList<WebDirectory> webDirectories;
+    private HashSet<Service> services;
+    
     public Host() {
-        super();
-        this.setLongAddr(0);
-        this.setAlive(true);
-        this.setStatus(Constants.STATUS_GREY);
-        this.setFlag(false);
+        this.id = "";
+        this.projectId = "";
+        this.longIpv4Addr = new Long(0);
+        this.ipv4 = "";
+        this.mac = "";
+        this.hostnames = new HashSet<String>();
+        this.os = new OS();
+        this.notes = new ArrayList<Note>();
+        this.statusMessage = "";
+        this.tags = new HashSet<String>();
+        this.status = Constants.STATUS_GREY;
+        this.lastModifiedBy = Constants.TOOL;
+        this.isFlagged = false;
+        this.files = new ArrayList<File>();
+        this.webDirectories = new ArrayList<WebDirectory>();
+        this.services = new HashSet<Service>();  
     }
-    
-    public Host(BasicDBObject base) {
-        super(base);
-    }
-    
+
+    /**
+     * @return the id
+     */
     public String getId() {
-        return this.getString("_id");
+        return id;
     }
-    
+
+    /**
+     * @param id the id to set
+     */
     public void setId(String id) {
-        this.put("_id", id);
+        this.id = id;
     }
-    
+
+    /**
+     * @return the projectId
+     */
     public String getProjectId() {
-        return this.getString("project_id");
+        return projectId;
     }
-    
+
+    /**
+     * @param projectId the projectId to set
+     */
     public void setProjectId(String projectId) {
-        this.put("project_id", projectId);
-    }
-    
-    public Integer getLongAddr() {
-        return this.getInt("long_addr");
-    }
-    
-    public void setLongAddr(Integer longAddr) {
-        this.put("long_addr", longAddr);
-    }
-    
-    public String getStringAddr() {
-        return this.getString("string_addr");
-    }
-    
-    public void setStringAddr(String stringAddr) {
-        this.put("string_addr", stringAddr);
-    }
-    
-    public String getMacAddr() {
-        return this.getString("mac_addr");
-    }
-    
-    public void setMacAddr(String macAddr) {
-        this.put("mac_addr", macAddr);
+        this.projectId = projectId;
     }
 
-    public ArrayList<String> getHostnames() {
-        return (ArrayList<String>) this.get("hostnames");
+    /**
+     * @return the longIpv4Addr
+     */
+    public Long getLongIpv4Addr() {
+        return longIpv4Addr;
     }
 
-    public void setHostnames(ArrayList<String> hostnames) {
-        this.put("hostnames", hostnames);
+    /**
+     * @param longIpv4Addr the longIpv4Addr to set
+     */
+    public void setLongIpv4Addr(Long longIpv4Addr) {
+        this.longIpv4Addr = longIpv4Addr;
     }
 
-    public ArrayList<OS> getOs() {
-        ArrayList<OS> ret = new ArrayList<OS>();
-        for (BasicDBObject obj : (ArrayList<BasicDBObject>) this.get("os")) {
-            ret.add(new OS(obj));
-        }
-        return ret;
+    /**
+     * @return the ipv4
+     */
+    public String getIpv4() {
+        return ipv4;
     }
 
-    public void setOs(ArrayList<OS> os) {
-        this.put("os", os);
+    /**
+     * @param ipv4 the ipv4 to set
+     */
+    public void setIpv4(String ipv4) {
+        this.ipv4 = ipv4;
     }
 
+    /**
+     * @return the mac
+     */
+    public String getMac() {
+        return mac;
+    }
+
+    /**
+     * @param mac the mac to set
+     */
+    public void setMac(String mac) {
+        this.mac = mac;
+    }
+
+    /**
+     * @return the hostnames
+     */
+    public HashSet<String> getHostnames() {
+        return hostnames;
+    }
+
+    /**
+     * @param hostnames the hostnames to set
+     */
+    public void setHostnames(HashSet<String> hostnames) {
+        this.hostnames = hostnames;
+    }
+
+    /**
+     * @return the os
+     */
+    public OS getOs() {
+        return os;
+    }
+
+    /**
+     * @param os the os to set
+     */
+    public void setOs(OS os) {
+        this.os = os;
+    }
+
+    /**
+     * @return the notes
+     */
     public ArrayList<Note> getNotes() {
-        ArrayList<Note> ret = new ArrayList<Note>();
-        for (BasicDBObject obj : (ArrayList<BasicDBObject>) this.get("notes")) {
-            ret.add(new Note(obj));
-        }
-        return ret;
+        return notes;
     }
 
+    /**
+     * @param notes the notes to set
+     */
     public void setNotes(ArrayList<Note> notes) {
-        this.put("notes", notes);
+        this.notes = notes;
     }
-    
-    public boolean isAlive() {
-        return this.getBoolean("alive");
+
+    /**
+     * @return the statusMessage
+     */
+    public String getStatusMessage() {
+        return statusMessage;
     }
-    
-    public void setAlive(boolean alive) {
-        this.put("alive", alive);
+
+    /**
+     * @param statusMessage the statusMessage to set
+     */
+    public void setStatusMessage(String statusMessage) {
+        this.statusMessage = statusMessage;
     }
-        
+
+    /**
+     * @return the tags
+     */
+    public HashSet<String> getTags() {
+        return tags;
+    }
+
+    /**
+     * @param tags the tags to set
+     */
+    public void setTags(HashSet<String> tags) {
+        this.tags = tags;
+    }
+
+    /**
+     * @return the status
+     */
     public String getStatus() {
-        return this.getString("status");
+        return status;
     }
-    
+
+    /**
+     * @param status the status to set
+     */
     public void setStatus(String status) {
-        this.put("status", status);
+        this.status = status;
     }
-        
+
+    /**
+     * @return the lastModifiedBy
+     */
     public String getLastModifiedBy() {
-        return this.getString("last_modified_by");
+        return lastModifiedBy;
     }
-    
+
+    /**
+     * @param lastModifiedBy the lastModifiedBy to set
+     */
     public void setLastModifiedBy(String lastModifiedBy) {
-        this.put("last_modified_by", lastModifiedBy);
+        this.lastModifiedBy = lastModifiedBy;
     }
-    
-    public boolean isFlag() {
-        return this.getBoolean("flag");
+
+    /**
+     * @return the isFlagged
+     */
+    public Boolean getIsFlagged() {
+        return isFlagged;
     }
-    
-    public void setFlag(boolean flag) {
-        this.put("flag", flag);
+
+    /**
+     * @param isFlagged the isFlagged to set
+     */
+    public void setIsFlagged(Boolean isFlagged) {
+        this.isFlagged = isFlagged;
+    }
+
+    /**
+     * @return the files
+     */
+    public ArrayList<File> getFiles() {
+        return files;
+    }
+
+    /**
+     * @param files the files to set
+     */
+    public void setFiles(ArrayList<File> files) {
+        this.files = files;
+    }
+
+    /**
+     * @return the webDirectories
+     */
+    public ArrayList<WebDirectory> getWebDirectories() {
+        return webDirectories;
+    }
+
+    /**
+     * @param webDirectories the webDirectories to set
+     */
+    public void setWebDirectories(ArrayList<WebDirectory> webDirectories) {
+        this.webDirectories = webDirectories;
+    }
+
+    /**
+     * @return the services
+     */
+    public HashSet<Service> getServices() {
+        return services;
+    }
+
+    /**
+     * @param services the services to set
+     */
+    public void setServices(HashSet<Service> services) {
+        this.services = services;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 23 * hash + Objects.hashCode(this.ipv4);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Host other = (Host) obj;
+        if (!Objects.equals(this.ipv4, other.ipv4)) {
+            return false;
+        }
+        return true;
     }
 }

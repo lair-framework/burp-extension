@@ -6,62 +6,61 @@
 
 package lair.models;
 
-import com.mongodb.BasicDBObject;
-
 /**
  *
  * @author dkottmann
  */
-public class Note extends BasicDBObject {
+public class Note {
+    private String title;
+    private String content;
+    private String lastModifiedBy;
     
     public Note() {
-        super();
-    }
-    
-    public Note(BasicDBObject base) {
-        super(base);
+        this.title = "";
+        this.content = "";
+        this.lastModifiedBy = Constants.TOOL;
     }
 
     /**
      * @return the title
      */
     public String getTitle() {
-        return this.getString("title");
+        return title;
     }
 
     /**
      * @param title the title to set
      */
     public void setTitle(String title) {
-        this.put("title", title);
+        this.title = title;
     }
 
     /**
      * @return the content
      */
     public String getContent() {
-        return this.getString("content");
+        return content;
     }
 
     /**
      * @param content the content to set
      */
     public void setContent(String content) {
-        this.put("content", content);
+        this.content = content;
     }
 
     /**
      * @return the lastModifiedBy
      */
     public String getLastModifiedBy() {
-        return this.getString("last_modified_by");
+        return lastModifiedBy;
     }
 
     /**
      * @param lastModifiedBy the lastModifiedBy to set
      */
     public void setLastModifiedBy(String lastModifiedBy) {
-        this.put("last_modified_by", lastModifiedBy);
+        this.lastModifiedBy = lastModifiedBy;
     }
     
 }
