@@ -1,23 +1,26 @@
 #!/bin/bash
 
-if [ ! -d "$1" ]; then
-    echo "[!] Directory does not exist"
+if [ $# -eq 0 ]; then
     echo "Usage: $0 DESTINATION_DIRECTORY"
     echo
     exit 1
 fi
 
-mkdir $1/lib
+if [ ! -d "$1" ]; then
+    echo "[!] Directory did not exist, created."
+    mkdir -p $1/lib
+    if [ ! -d "$1/lib" ]; then
+        echo "[+] Could not create directory ..."
+        exit 1
+    fi
+fi
 
-wget http://mirror.symnds.com/software/Apache//httpcomponents/httpclient/binary/httpcomponents-client-4.5-bin.tar.gz -O $1/httpcomponents-client-4.5-bin.tar.gz
-wget http://search.maven.org/remotecontent?filepath=com/google/code/gson/gson/2.3.1/gson-2.3.1.jar -O $1/lib/gson-2.3.1.jar
-
+echo "[+] Downloading files to $1 ..."
+pushd . &>/dev/null
 cd $1
-tar -xzvf httpcomponents-client-4.5-bin.tar.gz
-mv httpcomponents-client-4.5/lib/*jar $1/lib
-
-rm $1/httpcomponents-client-4.5-bin.tar.gz
-rm -R $1/httpcomponents-client-4.5
-
-echo "[+] Complete. Add $1/lib to your Java CLASSPATH or Burp Extender options"
+wget -q http://mirror.symnds.com/software/Apache/httpcomponents/httpclient/binary/httpcomponents-client-4.5-bin.tar.gz  -O - | \
+    tar -zxf - --strip-components=1 -K lib
+wget -q http://search.maven.org/remotecontent?filepath=com/google/code/gson/gson/2.3.1/gson-2.3.1.jar -O lib/gson-2.3.1.jar
+popd &>/dev/null
+echo "[+] Complete. Add `(cd $1 && pwd)`/lib to your Java CLASSPATH or Burp Extender options"
 exit 0
